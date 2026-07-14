@@ -6,6 +6,7 @@
 <title>Danny Varghese — La Bodega</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:transparent}
@@ -267,9 +268,9 @@ renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
 renderer.setClearColor(0x000000,0); // fully transparent clear
 var scene=new THREE.Scene(); // no background color, no fog — blends into page
-var F=35,asp=window.innerWidth/window.innerHeight;
+var F=38,asp=window.innerWidth/window.innerHeight;
 var cam=new THREE.OrthographicCamera(-F*asp,F*asp,F,-F,0.1,400);
-cam.position.set(52,42,52);cam.lookAt(6,2,2);
+cam.position.set(58,48,58);cam.lookAt(10,4,5);
 var NAV_H=52,PAD=72; // PAD = space around store for tooltip breathing room
 function onResize(){
   var w=window.innerWidth,h=window.innerHeight-NAV_H;
@@ -278,6 +279,27 @@ function onResize(){
   var a=w/h;cam.left=-F*a;cam.right=F*a;cam.updateProjectionMatrix();
 }
 window.addEventListener('resize',onResize);onResize();
+
+// GSAP entrance animations
+gsap.set('#c',{opacity:0,scale:0.95});
+gsap.set('#splash',{opacity:0,x:-40});
+gsap.set('nav',{opacity:0,y:-10});
+gsap.timeline()
+  .to('#c',{opacity:1,scale:1,duration:1.2,ease:'power2.out'},0)
+  .to('#splash',{opacity:1,x:0,duration:0.8,ease:'back.out',delay:0.4},0)
+  .to('nav',{opacity:1,y:0,duration:0.6,ease:'power2.out',delay:0.2},0);
+
+// Hover glow on zones (light pulse on hover)
+document.addEventListener('mouseover',function(e){
+  if(e.target.id && e.target.id.startsWith('dot-')){
+    gsap.to(e.target,{filter:'drop-shadow(0 0 8px rgba(232,160,48,0.6))',duration:0.3});
+  }
+});
+document.addEventListener('mouseout',function(e){
+  if(e.target.id && e.target.id.startsWith('dot-')){
+    gsap.to(e.target,{filter:'drop-shadow(0 0 0px rgba(232,160,48,0))',duration:0.3});
+  }
+});
 
 // Bright ambient for white-background context
 scene.add(new THREE.AmbientLight(0xffffff,0.72));
@@ -289,7 +311,7 @@ scene.add(new THREE.HemisphereLight(0xe8f0ff,0xe8d8c0,0.45));
 function mat(hex,r,m){return new THREE.MeshStandardMaterial({color:new THREE.Color(hex),roughness:r!==undefined?r:0.82,metalness:m!==undefined?m:0});}
 var M={
   ground:mat(0xf4f4f0,0.98), // near-white ground — blends into page bgwall:mat(0xf4ddb8,0.76),wallDk:mat(0xdcb880,0.84),wallTop:mat(0xfff0d0,0.68),
-  wood:mat(0xcc9038,0.76),woodDk:mat(0xa06010,0.84),woodLt:mat(0xe8b850,0.72),counter:mat(0x9a5c18,0.76),
+  wood:mat(0x8b7355,0.76),woodDk:mat(0x6b5345,0.84),woodLt:mat(0x9a8365,0.72),counter:mat(0x9a5c18,0.76),
   awB:mat(0x2068cc,0.74),awR:mat(0xcc2410,0.74),awW:mat(0xf8f0e0,0.78),
   chrome:new THREE.MeshStandardMaterial({color:0xd0c8b8,roughness:0.12,metalness:0.88}),
   glass:new THREE.MeshStandardMaterial({color:0x90c8ee,roughness:0.05,metalness:0.05,transparent:true,opacity:0.28}),
@@ -314,7 +336,7 @@ function sph(r,m,x,y,z){var mesh=new THREE.Mesh(new THREE.SphereGeometry(r,10,10
 function ptl(c,i,d,x,y,z){var l=new THREE.PointLight(c,i,d);l.position.set(x,y,z);scene.add(l);return l;}
 
 var gndMesh=new THREE.Mesh(new THREE.PlaneGeometry(200,200),M.ground);gndMesh.rotation.x=-Math.PI/2;gndMesh.position.y=-0.02;gndMesh.receiveShadow=true;scene.add(gndMesh);
-var floorBase=new THREE.Mesh(new THREE.PlaneGeometry(44,32),mat(0xc0ae88,0.92));floorBase.rotation.x=-Math.PI/2;floorBase.position.set(1,0.01,0.5);floorBase.receiveShadow=true;scene.add(floorBase);
+var floorBase=new THREE.Mesh(new THREE.PlaneGeometry(44,32),mat(0xc0ae88,0.92));floorBase.rotation.x=-Math.PI/2;floorBase.position.set(1,0.01,0.5);floorBase.receiveShadow=true;scene.add(floorBase);floorBase.visible=false;
 for(var fi=-21;fi<=22;fi++)for(var fj=-14;fj<=15;fj++){var isG=fi%2===0||fj%2===0;var tm=isG?M.fpDark:M.fpLight,th=isG?0.013:0.018;var t2=new THREE.Mesh(new THREE.BoxGeometry(0.94,th,0.94),tm);t2.position.set(fi,th/2+0.01,fj);t2.receiveShadow=true;scene.add(t2);}
 [-16,-12.6,-9.2,-5.8,-2.4,1.0,4.4,7.8].forEach(function(ax){var s=new THREE.Mesh(new THREE.BoxGeometry(1.3,0.022,30),mat(0xd0c0a0,0.94));s.position.set(ax,0.022,0.5);s.receiveShadow=true;scene.add(s);});
 var WH=6.5;
@@ -581,10 +603,10 @@ initDots();
     var cv = document.getElementById('c');
     if(cv) cv.style.top='0';
     NAV_H = 0;
-    // zoom out to show full store — wider frustum, positioned right
-    F = 35;
+    // zoom out to show full store — wider frustum, positioned right-top
+    F = 38;
     cam.top = F; cam.bottom = -F;
-    cam.position.set(52,42,52); cam.lookAt(6,2,2);
+    cam.position.set(58,48,58); cam.lookAt(10,4,5);
     onResize();
   }
 })();
