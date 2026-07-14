@@ -520,6 +520,19 @@ function showFS(){
   document.getElementById('fsmet').innerHTML=h;document.getElementById('fs').classList.add('vis');
 }
 initDots();
+
+// Embed mode: hide internal nav so canvas fills full viewport
+(function(){
+  var isEmbed = new URLSearchParams(location.search).get('embed');
+  if(isEmbed){
+    var nav = document.querySelector('nav');
+    var sg = document.getElementById('sg');
+    if(nav) nav.style.display='none';
+    if(sg) sg.style.top='10px';
+    var canvas = document.getElementById('c');
+    if(canvas) canvas.style.top='0';
+  }
+})();
 </script>
 </body>
 </html>
