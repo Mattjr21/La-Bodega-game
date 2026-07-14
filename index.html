@@ -521,7 +521,7 @@ function showFS(){
 }
 initDots();
 
-// Embed mode: hide internal nav so canvas fills full viewport
+// Embed mode: hide internal nav, zero NAV_H, fill full viewport
 (function(){
   var isEmbed = new URLSearchParams(location.search).get('embed');
   if(isEmbed){
@@ -529,8 +529,14 @@ initDots();
     var sg = document.getElementById('sg');
     if(nav) nav.style.display='none';
     if(sg) sg.style.top='10px';
-    var canvas = document.getElementById('c');
-    if(canvas) canvas.style.top='0';
+    var cv = document.getElementById('c');
+    if(cv) cv.style.top='0';
+    NAV_H = 0;
+    // zoom out to show full store
+    F = 27;
+    cam.top = F; cam.bottom = -F;
+    cam.position.set(52,46,52); cam.lookAt(0,2,-2);
+    onResize();
   }
 })();
 </script>
