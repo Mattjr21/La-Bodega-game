@@ -125,6 +125,11 @@ nav{position:fixed;top:0;left:0;right:0;height:52px;z-index:100;background:rgba(
 </head>
 <body>
 
+<!-- Loading state announcement for screen readers -->
+<div aria-live="polite" aria-label="Loading" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;">
+  <span id="loading-state">Interactive store demo loading...</span>
+</div>
+
 <!-- ── SPLASH SCREEN ─────────────────────────────────────────────────────── -->
 <div id="splash">
   <div class="sp-wrap">
@@ -425,9 +430,53 @@ window.addEventListener('click',function(e){
   var id=zoneAt(e);if(!id||solved.has(id)||ZONES[id].step!==step||solving)return;applyFix();
 });
 
+// Check prefers-reduced-motion
+var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(prefersReducedMotion){
+  var loadingMsg = document.getElementById('loading-state');
+  if(loadingMsg) loadingMsg.textContent = 'Motion animations disabled per your accessibility preferences. Static mode enabled.';
+}
+
+// Keyboard navigation for zones (arrow keys to cycle)
+var focusedZoneIdx = 0;
+var zoneIds = ZONE_IDS.slice();
+function clearZoneFocus(){
+  zoneIds.forEach(function(zid){
+    var dotEl = document.getElementById('dot-' + zid);
+    if(dotEl) dotEl.style.outline = 'none';
+  });
+}
+function setZoneFocus(idx){
+  clearZoneFocus();
+  var zid = zoneIds[idx];
+  var dotEl = document.getElementById('dot-' + zid);
+  if(dotEl){
+    dotEl.style.outline = '2px solid #0080FF';
+    dotEl.style.outlineOffset = '2px';
+  }
+}
+document.addEventListener('keydown', function(e){
+  if(e.key === 'ArrowRight' || e.key === 'ArrowDown'){
+    focusedZoneIdx = (focusedZoneIdx + 1) % zoneIds.length;
+    setZoneFocus(focusedZoneIdx);
+  } else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){
+    focusedZoneIdx = (focusedZoneIdx - 1 + zoneIds.length) % zoneIds.length;
+    setZoneFocus(focusedZoneIdx);
+  } else if(e.key === ' ' || e.key === 'Enter'){
+    var zid = zoneIds[focusedZoneIdx];
+    if(zid && !solved.has(zid) && ZONES[zid].step === step && !solving) applyFix();
+  }
+});
+
 var t=0;
 (function loop(){
   requestAnimationFrame(loop);t+=0.016;
+  // Skip animation frame if prefers-reduced-motion is set (static render only)
+  if(prefersReducedMotion && t > 0.05) return;
+  // Clear loading state on first render
+  var loadingEl = document.getElementById('loading-state');
+  if(loadingEl && loadingEl.textContent !== '') loadingEl.textContent = '';
+
   if(!solved.has('delivery')){
     trX+=trDir*0.018;if(trX>-13.5||trX<-20.5)trDir*=-1;
     trObj.position.x=trX;trBox.position.x=trX;
