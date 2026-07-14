@@ -8,7 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:#ffffff}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:#fdfdfd}
 #c{display:block;position:fixed;top:52px;left:0;right:0;bottom:0;width:100%!important}
 /* canvas height = viewport - nav */
 
@@ -532,10 +532,10 @@ initDots();
     var cv = document.getElementById('c');
     if(cv) cv.style.top='0';
     NAV_H = 0;
-    // zoom out to show full store
-    F = 27;
+    // zoom out to show full store — wider frustum, centered on store
+    F = 30;
     cam.top = F; cam.bottom = -F;
-    cam.position.set(52,46,52); cam.lookAt(0,2,-2);
+    cam.position.set(56,48,56); cam.lookAt(-2,1,-4);
     onResize();
   }
 })();
