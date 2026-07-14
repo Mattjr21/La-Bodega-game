@@ -266,7 +266,7 @@ var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
-renderer.setClearColor(0x000000,0); // fully transparent clear
+renderer.setClearColor(0xfdfdfd,1); // match case study light color #fdfdfd
 var scene=new THREE.Scene(); // no background color, no fog — blends into page
 var F=38,asp=window.innerWidth/window.innerHeight;
 var cam=new THREE.OrthographicCamera(-F*asp,F*asp,F,-F,0.1,400);
