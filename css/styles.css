@@ -471,7 +471,7 @@ body[data-view-mode='list'] .hint {
     left: 0;
     right: 0;
     width: 100%;
-    max-height: 48vh;
+    max-height: 52vh;
     border-radius: 16px 16px 0 0;
   }
 
@@ -481,10 +481,74 @@ body[data-view-mode='list'] .hint {
 
   .topbar {
     flex-wrap: wrap;
+    padding: 8px 12px;
   }
 
   .hint {
-    bottom: calc(48vh + 8px);
+    bottom: calc(52vh + 8px);
+  }
+}
+
+/* Narrow phones: keep the topbar to one tidy row */
+@media (max-width: 480px) {
+  .brand {
+    font-size: 14px;
+  }
+
+  .progress {
+    min-width: 0;
+  }
+
+  .progress__track {
+    width: 60px;
+  }
+
+  .progress__label {
+    font-size: 10px;
+  }
+
+  .topbar a.link {
+    display: none;
+  }
+
+  .panel__title {
+    font-size: 19px;
+  }
+}
+
+/* Landscape phones / short viewports: don't let the sheet eat the scene */
+@media (max-height: 560px) and (orientation: landscape) {
+  .panel {
+    top: 56px;
+    bottom: 8px;
+    left: 8px;
+    right: auto;
+    width: min(320px, 60vw);
+    max-height: calc(100% - 64px);
+    border-radius: var(--radius);
+  }
+
+  .metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hint {
+    display: none;
+  }
+
+  .topbar {
+    padding: 6px 12px;
+  }
+}
+
+/* Very short viewports of any orientation */
+@media (max-height: 460px) {
+  .hint {
+    display: none;
+  }
+
+  .panel {
+    max-height: calc(100% - 60px);
   }
 }
 
