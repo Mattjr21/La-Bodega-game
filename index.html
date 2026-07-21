@@ -1,615 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Danny Varghese — La Bodega</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:#fdfdfd}
-#c{display:block;position:fixed;top:52px;left:0;right:0;bottom:0;width:100%!important}
-/* canvas height = viewport - nav */
-
-/* ── SPLASH — top-right floating card, compact, light theme ───────────────────────────────────── */
-#splash{position:fixed;z-index:500;top:32px;right:32px;transform:none;transition:opacity .5s,transform .5s;pointer-events:all}
-#splash.out{opacity:0;transform:translateX(30px);pointer-events:none}
-@media(max-width:600px){#splash{top:50%;right:50%;transform:translate(50%,-50%)}#splash.out{transform:translate(calc(50% + 20px),-50%)}}
-.sp-wrap{width:340px;background:rgba(253,253,253,.98);border:1.5px solid rgba(232,160,48,.25);border-radius:14px;padding:18px 20px;box-shadow:0 12px 32px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.04);backdrop-filter:blur(10px)}
-.sp-badge{display:inline-block;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#b87820;border:1px solid rgba(184,120,32,.3);border-radius:99px;padding:4px 12px;margin-bottom:12px;font-weight:700}
-.sp-title{font-family:'DM Serif Display',serif;font-size:20px;color:#18140a;line-height:1.25;margin-bottom:6px}
-.sp-title span{color:#d08020;font-style:italic}
-.sp-sub{font-size:10px;color:#606878;line-height:1.6;margin-bottom:14px}
-.sp-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px}
-.sp-card{background:rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:9px 6px;text-align:center}
-.sp-icon{font-size:16px;margin-bottom:4px}
-.sp-cht{font-size:9px;font-weight:700;color:#2c2010;margin-bottom:2px}
-.sp-cds{font-size:8px;color:#708090;line-height:1.3}
-.sp-btn{width:100%;padding:10px;border-radius:9px;border:none;background:#d08020;color:#fff8f0;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
-.sp-btn:hover{background:#e89030;transform:translateY(-1px);box-shadow:0 6px 16px rgba(208,128,32,.25)}
-.sp-foot{font-size:8px;color:#9090a0;margin-top:6px;text-align:center}
-
-/* ── NAV ─────────────────────────────────────────────────────────────────── */
-nav{position:fixed;top:0;left:0;right:0;height:52px;z-index:100;background:rgba(24,20,10,.88);backdrop-filter:blur(14px);border-bottom:1px solid rgba(232,160,48,.15);display:flex;align-items:center;justify-content:space-between;padding:0 28px}
-.logo{font-family:'DM Serif Display',serif;font-size:17px;color:#e8d0b0}
-.nav-r{display:flex;align-items:center;gap:14px}
-.tl-lbl{font-size:10px;color:#c0a070;text-transform:uppercase;letter-spacing:2px;font-weight:700}
-.tl-track{width:96px;height:3px;background:rgba(208,160,80,.2);border-radius:99px;overflow:hidden}
-.tl-fill{height:100%;background:#d08020;border-radius:99px;transition:width .5s;width:0}
-.tl-ct{font-size:10px;color:#c0a070;font-weight:700}
-.vdiv{width:1px;height:14px;background:rgba(232,160,48,.2)}
-.nav-links a{font-size:12px;color:#c0a070;text-decoration:none;margin-left:16px;font-weight:600}
-.nav-links a:hover{color:#e8d0b0}
-
-/* ── STEP GUIDE ──────────────────────────────────────────────────────────── */
-#sg{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:100;display:flex;align-items:center;gap:10px;background:rgba(24,20,10,.88);border:1.5px solid rgba(232,160,48,.25);border-radius:999px;padding:8px 20px;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.25);transition:opacity .5s}
-.dots{display:flex;gap:7px}
-.dot{width:8px;height:8px;border-radius:50%;background:rgba(208,160,80,.2);border:1.5px solid rgba(208,160,80,.4);transition:all .3s}
-.dot.cur{background:#e8b030;border-color:#e8b030;transform:scale(1.4)}
-.dot.done{background:#4ac860;border-color:#4ac860}
-.sg-txt{font-size:12px;color:#e8d0b0;font-weight:600}
-.sg-txt b{color:#d08020}
-.sg-arr{color:#d08020;font-size:14px;animation:arp 1.3s ease-in-out infinite;font-weight:700}
-@keyframes arp{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
-
-/* ── FLOATING ZONE LABEL ─────────────────────────────────────────────────── */
-#zl{position:fixed;z-index:190;display:none;pointer-events:none;transform:translate(-50%,18px)}
-.zl-inner{display:flex;align-items:center;gap:8px;background:rgba(12,18,32,.96);border:1.5px solid rgba(255,200,100,.35);border-radius:999px;padding:7px 14px 7px 10px;box-shadow:0 4px 20px rgba(0,0,0,.55);white-space:nowrap}
-.zl-face{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
-.zl-name{font-size:11px;font-weight:700;color:#f5e8d0}
-.zl-cta{font-size:9px;font-weight:600;color:#e8a030;letter-spacing:1px;text-transform:uppercase;margin-left:2px}
-.zl-pulse{width:7px;height:7px;border-radius:50%;animation:zlp 1.2s ease-in-out infinite}
-@keyframes zlp{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.5}}
-.zl-inner.done{border-color:rgba(58,184,88,.4)}.zl-cta.done{color:#3ab858}.zl-pulse.done{background:#3ab858!important;animation:none}
-.zl-inner.locked{border-color:rgba(255,255,255,.08)}.zl-cta.locked{color:#506070}.zl-pulse.locked{background:#506070!important;animation:none}
-
-/* ── TOOLTIP ─────────────────────────────────────────────────────────────── */
-#tt{position:fixed;z-index:200;width:300px;display:none;pointer-events:none;transform:translate(-50%,-108%)}
-.tt-prob{background:rgba(10,5,2,.97);border:1.5px solid rgba(220,80,30,.4);border-radius:14px;padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.6)}
-.tt-soln{background:rgba(2,10,4,.97);border:1.5px solid rgba(40,180,70,.4);border-radius:14px;padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.6)}
-.tt-locked{background:rgba(12,18,32,.97);border:1.5px solid rgba(255,255,255,.07);border-radius:14px;padding:16px;box-shadow:0 12px 30px rgba(0,0,0,.4)}
-.tt-arr{width:0;height:0;margin:0 auto;border-left:8px solid transparent;border-right:8px solid transparent}
-.arr-prob{border-top:8px solid rgba(10,5,2,.97)}.arr-soln{border-top:8px solid rgba(2,10,4,.97)}.arr-lock{border-top:8px solid rgba(12,18,32,.97)}
-.tt-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.tt-icon{font-size:16px}
-.tt-nm{font-size:10px;font-weight:700;color:#c8a060;text-transform:uppercase;letter-spacing:2px;flex:1}
-.tt-badge{font-size:9px;padding:3px 9px;border-radius:99px;font-weight:700}
-.badge-prob{background:rgba(220,80,30,.18);color:#ff9060;border:1px solid rgba(220,80,30,.35)}
-.badge-soln{background:rgba(40,180,70,.18);color:#50ee80;border:1px solid rgba(40,180,70,.35)}
-.badge-lock{background:rgba(255,255,255,.05);color:#708090;border:1px solid rgba(255,255,255,.1)}
-.tt-title{font-family:'DM Serif Display',serif;font-size:14px;color:#f5e8d0;line-height:1.35;margin-bottom:6px}
-.tt-body{font-size:11px;color:#b0a080;line-height:1.6;margin-bottom:10px}
-.tt-stat{font-size:10px;padding:7px 10px;border-radius:8px;margin-bottom:12px;font-weight:600;background:rgba(220,80,30,.08);color:#ff9060;border:1px solid rgba(220,80,30,.22)}
-.tt-delta{margin-bottom:12px}
-.drow{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,200,100,.06)}
-.dlbl{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#a08050;width:80px;font-weight:700}
-.dbef{font-size:11px;color:#685040;text-decoration:line-through}
-.darr{font-size:10px;color:#706040;margin:0 4px}
-.daft{font-size:11px;color:#40e870;font-weight:700}
-.tt-lock-txt{font-size:11px;color:#708090;font-style:italic;line-height:1.65}
-.tt-pw{margin-bottom:10px}
-.tt-pl{display:flex;justify-content:space-between;font-size:9px;color:#c8a060;margin-bottom:4px;font-weight:700}
-.tt-pt{height:3px;background:rgba(255,200,100,.08);border-radius:99px;overflow:hidden}
-.tt-pf{height:100%;background:#e8a030;border-radius:99px;width:0;transition:width .05s linear}
-.tt-btn{width:100%;padding:10px;border-radius:9px;border:none;background:#e8a030;color:#080604;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;pointer-events:all}
-.tt-btn:hover{background:#ffc040;transform:translateY(-1px)}
-.tt-slv{text-align:center;font-size:11px;color:#c8a060;font-weight:600;padding:8px}
-
-/* ── END PANEL ───────────────────────────────────────────────────────────── */
-#fs{position:fixed;right:-400px;top:0;bottom:0;width:380px;z-index:150;display:flex;align-items:center;padding:20px;transition:right .7s cubic-bezier(.22,1,.36,1)}
-#fs.vis{right:0}
-.fs-card{width:100%;background:rgba(24,20,10,.94);border:1.5px solid rgba(232,160,48,.25);border-radius:20px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
-.fs-over{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#c0a070;margin-bottom:6px;font-weight:700}
-.fs-title{font-family:'DM Serif Display',serif;font-size:20px;color:#f5f0e8;line-height:1.35;margin-bottom:14px}
-.fs-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(232,160,48,.1)}
-.fs-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#d0b080;font-weight:700}
-.fs-bef{color:#a89878;text-decoration:line-through;font-size:12px}.fs-arrw{color:#c0a070;font-size:12px}.fs-aft{color:#4ac860;font-weight:700;font-size:12px}
-.fs-box{background:rgba(34,136,64,.06);border:1px solid rgba(34,136,64,.18);border-radius:10px;padding:13px;margin:14px 0}
-.fs-pl{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#228840;margin-bottom:5px;font-weight:700}
-.fs-pt{font-family:'DM Serif Display',serif;font-size:12px;color:#304830;line-height:1.55;font-style:italic}
-.fs-ps{font-size:10px;color:#228840;margin-top:5px;font-weight:600}
-.fs-b1{width:100%;padding:12px;border-radius:10px;border:none;background:#d08020;color:#fff8f0;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;font-family:'DM Sans',sans-serif}
-.fs-b2{width:100%;padding:12px;border-radius:10px;border:1.5px solid rgba(0,0,0,.12);background:transparent;color:#706050;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600}
-.cf{position:fixed;border-radius:2px;z-index:300;pointer-events:none;animation:cff 1.4s ease-in forwards}
-@keyframes cff{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(120px) rotate(720deg)}}
-
-/* ── HTML ARROWS — pure CSS triangles on top of canvas ──────────────────── */
-/* We project 3D position to screen and place these */
-.zone-arrow-wrap{position:fixed;z-index:80;pointer-events:none;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:3px}
-.za{width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;animation:zab 0.9s ease-in-out infinite}
-.za:nth-child(2){animation-delay:.22s;opacity:.75}
-.za:nth-child(3){animation-delay:.44s;opacity:.50}
-@keyframes zab{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>La Bodega — Checkout Ops Mission</title>
+  <meta name="description" content="Explore a colorful 3D bodega and walk through five operational fixes from Danny Varghese’s Checkout Ops case study." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js"
+    }
+  }
+  </script>
 </head>
 <body>
+  <div id="app">
+    <a class="skip-link" href="#zone-list">Skip to mission controls</a>
 
-<!-- Loading state announcement for screen readers -->
-<div aria-live="polite" aria-label="Loading" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;">
-  <span id="loading-state">Interactive store demo loading...</span>
-</div>
-
-<!-- ── SPLASH SCREEN ─────────────────────────────────────────────────────── -->
-<div id="splash">
-  <div class="sp-wrap">
-    <div class="sp-badge">Interactive Case Study</div>
-    <h1 class="sp-title">The store opens<br/>in <span>24 hours.</span></h1>
-    <p class="sp-sub">La Bodega opened with 5 broken systems — products invisible to the POS, no roles, no pricing model, and a store full of customers arriving in 24 hours. This is a ~2 min interactive recreation of how it was fixed.</p>
-    <div class="sp-cards">
-      <div class="sp-card">
-        <div class="sp-icon">🔍</div>
-        <div class="sp-cht">Hover a zone</div>
-        <div class="sp-cds">See the broken system — what's failing and why</div>
+    <header class="topbar">
+      <div class="brand">La Bodega <span>Checkout Ops</span></div>
+      <div class="topbar__actions">
+        <div
+          class="progress"
+          id="mission-progress"
+          role="progressbar"
+          aria-label="Mission progress"
+          aria-valuemin="0"
+          aria-valuemax="5"
+          aria-valuenow="0"
+          aria-valuetext="0 of 5 zones optimized"
+        >
+          <div class="progress__track"><div class="progress__fill" id="progress-fill"></div></div>
+          <span class="progress__label" id="progress-label">0 / 5 zones optimized</span>
+        </div>
+        <button type="button" class="chip-btn" id="btn-mode" aria-pressed="false">List Walkthrough</button>
+        <button type="button" class="chip-btn" id="btn-restart" hidden>Restart</button>
+        <a class="link" id="link-case" href="https://danny-me-rho.vercel.app/projects/bodega-ops" target="_blank" rel="noopener">Case study</a>
+        <a class="link" id="link-home" href="https://danny-me-rho.vercel.app/" target="_blank" rel="noopener">danny.me</a>
       </div>
-      <div class="sp-card">
-        <div class="sp-icon">⚡</div>
-        <div class="sp-cht">Click to fix</div>
-        <div class="sp-cds">Apply the real fix that was used in 72 hours</div>
+    </header>
+
+    <div class="mobile-hud" aria-label="Current mission issue">
+      <div class="mobile-hud__status">
+        <strong id="mobile-issue">Issue 1 of 5</strong>
+        <span id="mobile-zone">Delivery Dock</span>
       </div>
-      <div class="sp-card">
-        <div class="sp-icon">✅</div>
-        <div class="sp-cht">See the outcome</div>
-        <div class="sp-cds">Before → After metrics update in real time</div>
+      <button type="button" class="mobile-hud__mode" id="mobile-mode">
+        List
+      </button>
+    </div>
+
+    <canvas
+      id="c"
+      role="img"
+      aria-label="Interactive 3D store. Tap the pulsing ring, find the broken object, then apply the fix. Orbit with pointer drag when exploring."
+    ></canvas>
+
+    <aside class="panel" aria-label="Mission panel">
+      <div>
+        <p class="panel__eyebrow">Mission</p>
+        <h1 class="panel__title">Optimize five store zones</h1>
+        <p class="panel__lede">
+          Ops mini-game: tap the open ring, find the broken object, apply the fix, and watch the floor change. List view skips the hunt.
+        </p>
       </div>
-    </div>
-    <button class="sp-btn" onclick="startGame()">Enter the Store →</button>
-    <p class="sp-foot">Fix all 5 systems in order · Takes ~2 min</p>
-    <a href="https://dannyvr.framer.ai/la-bodega" target="_blank" style="display:block;margin-top:12px;color:#666;font-size:12px;text-decoration:none;letter-spacing:0.05em;">Skip — go straight to case study ↗</a>
+
+      <div
+        id="zone-list"
+        class="zone-list"
+        role="group"
+        aria-label="Store zones"
+      ></div>
+
+      <section class="zone-detail" id="zone-detail" hidden aria-live="polite">
+        <h3 id="detail-title">Zone</h3>
+        <div>
+          <p class="label">What’s wrong</p>
+          <p id="detail-problem"></p>
+        </div>
+        <div>
+          <p class="label">The fix</p>
+          <p id="detail-solution"></p>
+        </div>
+        <p class="metric-line" id="detail-metric"></p>
+        <p class="challenge-line" id="detail-challenge" hidden></p>
+        <div class="detail-actions">
+          <button type="button" class="btn btn-secondary" id="btn-back">Back to overview</button>
+          <button type="button" class="btn btn-primary" id="btn-apply">Apply fix</button>
+        </div>
+      </section>
+
+      <details class="metrics-disclosure" id="metrics-disclosure">
+        <summary>Case study metrics</summary>
+        <div class="metrics" id="metrics"></div>
+      </details>
+
+      <div class="win" id="win" hidden>
+        <h3>Mission complete</h3>
+        <p>
+          Five zones optimized — sample gate, shared catalog path, live correction queue,
+          three-team verification, and pricing onboarding. Read the full case study for the 72-hour story.
+        </p>
+        <button type="button" class="btn btn-primary" id="btn-replay">Play again</button>
+      </div>
+
+      <div class="fallback" id="fallback" role="status">
+        <strong>List walkthrough ready</strong>
+        <p data-fallback-msg>Use the mission panel to complete all five zones without 3D.</p>
+      </div>
+
+      <nav class="panel__links" aria-label="Related links">
+        <a id="panel-link-case" href="https://danny-me-rho.vercel.app/projects/bodega-ops" target="_blank" rel="noopener">Read case study</a>
+        <a id="panel-link-home" href="https://danny-me-rho.vercel.app/" target="_blank" rel="noopener">Visit portfolio</a>
+      </nav>
+    </aside>
+
+    <p class="hint" id="hint" hidden aria-hidden="true">
+      Drag to orbit · Tap the pulsing ring · Find the broken object · Apply fix · Esc returns
+    </p>
+
+    <div id="toast" class="toast" role="status" hidden></div>
+
+    <div id="live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
   </div>
-</div>
 
-<canvas id="c" role="img" aria-label="La Bodega interactive store demo — fix 5 broken systems in 72 hours"></canvas>
-<nav>
-  <span class="logo">Danny Varghese</span>
-  <div class="nav-r">
-    <span class="tl-lbl">72H Timeline</span>
-    <div class="tl-track"><div class="tl-fill" id="np"></div></div>
-    <span class="tl-ct" id="nc">0 / 5 fixed</span>
-    <div class="vdiv"></div>
-    
-  </div>
-</nav>
-<div id="sg">
-  <div class="dots" id="dots"></div>
-  <div class="vdiv"></div>
-  <p class="sg-txt" id="sgtxt">Loading…</p>
-  <span class="sg-arr">→</span>
-</div>
-
-<!-- Floating label follows cursor on hover -->
-<div id="zl">
-  <div class="zl-inner" id="zl-inner">
-    <div class="zl-face" id="zl-face">📦</div>
-    <div><div class="zl-name" id="zl-name">Zone</div><div class="zl-cta" id="zl-cta">Click to fix</div></div>
-    <div class="zl-pulse" id="zl-pulse" style="background:#e8a030"></div>
-  </div>
-</div>
-
-<!-- 3 bouncing HTML arrows per active zone (projected to screen) -->
-<div id="arr-container"></div>
-
-<!-- Tooltip -->
-<div id="tt">
-  <div id="ttp" class="tt-prob">
-    <div class="tt-head"><span class="tt-icon" id="tt-icon">📦</span><span class="tt-nm" id="ttn-p"></span><span class="tt-badge badge-prob">Problem</span></div>
-    <h3 class="tt-title" id="tttl-p"></h3>
-    <p class="tt-body" id="ttbd-p"></p>
-    <div class="tt-stat" id="ttmt-p"></div>
-    <div class="tt-pw" id="ttpw" style="display:none">
-      <div class="tt-pl"><span>Applying fix…</span><span id="ttpp">0%</span></div>
-      <div class="tt-pt"><div class="tt-pf" id="ttpf"></div></div>
-    </div>
-    <button class="tt-btn" id="ttbtn" onclick="applyFix()">Apply the fix →</button>
-    <div class="tt-slv" id="ttslv" style="display:none">Working…</div>
-  </div>
-  <div id="tts" class="tt-soln" style="display:none">
-    <div class="tt-head"><span class="tt-icon" id="tt-icon-s">📦</span><span class="tt-nm" id="ttn-s"></span><span class="tt-badge badge-soln">Fixed ✓</span></div>
-    <h3 class="tt-title" id="tttl-s"></h3>
-    <p class="tt-body" id="ttbd-s"></p>
-    <div class="tt-delta" id="ttdelta"></div>
-  </div>
-  <div id="ttlk" class="tt-locked" style="display:none">
-    <div class="tt-head"><span class="tt-nm" id="ttn-l"></span><span class="tt-badge badge-lock">Locked</span></div>
-    <p class="tt-lock-txt">Fix upstream systems first.<br/>The active zone is marked with arrows ↓</p>
-  </div>
-  <div class="tt-arr" id="ttarr"></div>
-</div>
-
-<div id="fs">
-  <div class="fs-card">
-    <p class="fs-over">Structural Recovery · 72 Hours</p>
-    <h2 class="fs-title">Fully operational.</h2>
-    <div id="fsmet"></div>
-    <div class="fs-box">
-      <p class="fs-pl">Design Principle</p>
-      <p class="fs-pt">"A solution requiring the designer's presence has not yet earned structural status."</p>
-      <p class="fs-ps">Staff taught each other on Day 3. System held through Week 4.</p>
-    </div>
-    <button class="fs-b1" onclick="window.open('https://dannyvr.framer.ai/la-bodega','_blank')">Read Full Case Study →</button>
-    <button class="fs-b2" onclick="window.open('https://dannyvr.framer.ai/#home','_blank')">View More Work</button>
-  </div>
-</div>
-
-<script>
-var ZONES={
-  delivery:{step:1,label:'Delivery Dock',icon:'📦',col:'#ff8c20',colHex:0xff8c20,
-    prob:{t:'Products land on shelves unregistered',b:'Trucks unload and staff shelf products immediately. The POS has never seen these items. No SKU, no price, no record.',stat:'0% registered at entry'},
-    soln:{t:'5-step receiving stage inserted',b:'Products now go through a mandatory registration before touching the shelf. Dock → Check → Log → Tag → Shelf.',delta:[{l:'Entry Check',b:'None',a:'5-step'},{l:'POS Sync',b:'Never',a:'Before shelf'},{l:'SKU Rate',b:'0%',a:'100%'}]}},
-  register:{step:2,label:'POS Terminal',icon:'🖥️',col:'#4488ff',colHex:0x4488ff,
-    prob:{t:'Barcode format mismatch at checkout',b:"Vendors use EAN-13 barcodes. The POS expects UPC-A. Every scan returns 'Item Not Found'. Cashiers type prices manually.",stat:'~40% of products invisible to POS'},
-    soln:{t:'Barcode normalization tool deployed',b:'A simple mobile web tool converts EAN-13 to UPC-A at receiving. Staff use their own phones. No hardware.',delta:[{l:'Format',b:'EAN-13',a:'UPC-A'},{l:'Terminals',b:'3 failing',a:'3 working'},{l:'Recognition',b:'60%',a:'100%'}]}},
-  queue:{step:3,label:'Checkout Queue',icon:'🛒',col:'#20ddb8',colHex:0x20ddb8,
-    prob:{t:'5–7 minutes per checkout transaction',b:'Every unknown product requires a price lookup, manager override, and manual entry. Queue builds. Customers leave.',stat:'5–7 min avg · 3 staff per register'},
-    soln:{t:'Checkout drops to under 30 seconds',b:'With barcodes normalized and SKUs registered, checkout becomes a confirmation — not a discovery.',delta:[{l:'Checkout',b:'5–7 min',a:'30s–1 min'},{l:'Staff',b:'3',a:'1'},{l:'Escalations',b:'Every txn',a:'Zero'}]}},
-  aisles:{step:4,label:'Stock & Aisles',icon:'🗂️',col:'#ffcc30',colHex:0xffcc30,
-    prob:{t:'No one owns the failure',b:'Receiving, stocking, cashiers and restaurant all improvise. When nobody owns a stage, nobody fixes it either.',stat:'100% improvisation, 0% documentation'},
-    soln:{t:'Role ownership at every stage',b:'Each role receives a 5-step checklist covering their zone. Improvisation becomes structurally impossible.',delta:[{l:'Protocol',b:'None',a:'5-step'},{l:'Ownership',b:'Diffuse',a:'Per-role'},{l:'Escalation',b:'Ignored',a:'Documented'}]}},
-  revenue:{step:5,label:'Revenue Board',icon:'📊',col:'#60e060',colHex:0x60e060,
-    prob:{t:'All revenue recorded as "Misc"',b:'Unrecognized SKUs resolve to a catch-all Miscellaneous bucket. Margins are unverifiable. Pricing is guesswork.',stat:'Revenue data is structurally corrupt'},
-    soln:{t:'Product-level revenue attribution',b:'Every transaction now maps to a SKU. Margins are real, improvable, and benchmarkable.',delta:[{l:'Attribution',b:'Misc',a:'Product'},{l:'Margins',b:'Unknown',a:'Verified'},{l:'Pricing',b:'Guessed',a:'Benchmarked'}]}}
-};
-var METRICS=[{l:'Checkout',b:'5–7 min',a:'30s–1 min'},{l:'SKU Recognition',b:'~60%',a:'100%'},{l:'Staff/Register',b:'3',a:'1'},{l:'Attribution',b:'Misc',a:'Product'},{l:'Protocol',b:'None',a:'Documented'}];
-var ZONE_IDS=['delivery','register','queue','aisles','revenue'];
-var solved=new Set(),step=1,hovered=null,solving=null,pint=null,gameStarted=false;
-
-function startGame(){
-  var sp=document.getElementById('splash');sp.classList.add('out');
-  setTimeout(function(){sp.style.display='none';},650);
-  gameStarted=true;
-}
-
-// THREE
-var canvas=document.getElementById('c');
-var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
-renderer.setClearColor(0xfdfdfd,0); // transparent — CSS bg shows through unaffected by tonemapping
-var scene=new THREE.Scene(); // no background color, no fog — blends into page
-var F=38,asp=window.innerWidth/window.innerHeight;
-var cam=new THREE.OrthographicCamera(-F*asp,F*asp,F,-F,0.1,400);
-cam.position.set(58,48,58);cam.lookAt(10,4,5);
-var NAV_H=52,PAD=72; // PAD = space around store for tooltip breathing room
-function onResize(){
-  var w=window.innerWidth,h=window.innerHeight-NAV_H;
-  renderer.setSize(w,h);
-  canvas.style.height=h+'px';
-  var a=w/h;cam.left=-F*a;cam.right=F*a;cam.updateProjectionMatrix();
-}
-window.addEventListener('resize',onResize);onResize();
-
-// GSAP entrance animations
-gsap.set('#c',{opacity:0,scale:0.95});
-gsap.set('#splash',{opacity:0,x:-40});
-gsap.set('nav',{opacity:0,y:-10});
-gsap.timeline()
-  .to('#c',{opacity:1,scale:1,duration:1.2,ease:'power2.out'},0)
-  .to('#splash',{opacity:1,x:0,duration:0.8,ease:'back.out',delay:0.4},0)
-  .to('nav',{opacity:1,y:0,duration:0.6,ease:'power2.out',delay:0.2},0);
-
-// Hover glow on zones (light pulse on hover)
-document.addEventListener('mouseover',function(e){
-  if(e.target.id && e.target.id.startsWith('dot-')){
-    gsap.to(e.target,{filter:'drop-shadow(0 0 8px rgba(232,160,48,0.6))',duration:0.3});
-  }
-});
-document.addEventListener('mouseout',function(e){
-  if(e.target.id && e.target.id.startsWith('dot-')){
-    gsap.to(e.target,{filter:'drop-shadow(0 0 0px rgba(232,160,48,0))',duration:0.3});
-  }
-});
-
-// Bright ambient for white-background context
-scene.add(new THREE.AmbientLight(0xffffff,0.72));
-var sun=new THREE.DirectionalLight(0xfff8e8,2.2);sun.position.set(35,55,28);sun.castShadow=true;
-sun.shadow.mapSize.width=sun.shadow.mapSize.height=4096;sun.shadow.camera.left=-70;sun.shadow.camera.right=70;sun.shadow.camera.top=70;sun.shadow.camera.bottom=-70;sun.shadow.camera.near=1;sun.shadow.camera.far=240;sun.shadow.bias=-0.0005;sun.shadow.radius=12;scene.add(sun);
-var fillL=new THREE.DirectionalLight(0xd0e4f8,0.55);fillL.position.set(-25,18,-22);scene.add(fillL);
-scene.add(new THREE.HemisphereLight(0xe8f0ff,0xe8d8c0,0.45));
-
-function mat(hex,r,m){return new THREE.MeshStandardMaterial({color:new THREE.Color(hex),roughness:r!==undefined?r:0.82,metalness:m!==undefined?m:0});}
-var M={
-  ground:mat(0xf4f4f0,0.98), // near-white ground — blends into page bgwall:mat(0xf4ddb8,0.76),wallDk:mat(0xdcb880,0.84),wallTop:mat(0xfff0d0,0.68),
-  wood:mat(0x8b7355,0.76),woodDk:mat(0x6b5345,0.84),woodLt:mat(0x9a8365,0.72),counter:mat(0x9a5c18,0.76),
-  awB:mat(0x2068cc,0.74),awR:mat(0xcc2410,0.74),awW:mat(0xf8f0e0,0.78),
-  chrome:new THREE.MeshStandardMaterial({color:0xd0c8b8,roughness:0.12,metalness:0.88}),
-  glass:new THREE.MeshStandardMaterial({color:0x90c8ee,roughness:0.05,metalness:0.05,transparent:true,opacity:0.28}),
-  screenOn:new THREE.MeshStandardMaterial({color:0x102060,roughness:0.18,metalness:0.3,emissive:new THREE.Color(0x1040d0),emissiveIntensity:1.0}),
-  dark:mat(0x0c0808,0.92),rubber:mat(0x080808,0.97),
-  cardboard:mat(0xd0a850,0.88),cardOk:mat(0x408828,0.80),
-  pR:mat(0xd82818,0.76),pY:mat(0xeab010,0.76),pG:mat(0x289018,0.76),pO:mat(0xd86818,0.76),pB:mat(0x2040a8,0.76),pP:mat(0x7030a8,0.76),pT:mat(0x188870,0.76),pC:mat(0xe8d8a0,0.80),
-  skin1:mat(0xf0b880,0.86),skin2:mat(0xd8a060,0.86),skin3:mat(0xb87838,0.86),
-  hair1:mat(0x180c04,0.88),hair2:mat(0x341408,0.88),hair3:mat(0x906030,0.88),
-  shirt1:mat(0x2858c8,0.80),shirt2:mat(0xc01010,0.80),shirt3:mat(0x289838,0.80),shirt4:mat(0xd8d0c0,0.80),
-  pants1:mat(0x1c2858,0.80),pants2:mat(0x1c1c1c,0.84),apron:mat(0xf0e0c8,0.80),
-  signGlow:new THREE.MeshStandardMaterial({color:new THREE.Color(0x0c1850),roughness:0.6,metalness:0.1,emissive:new THREE.Color(0x1040a0),emissiveIntensity:0.5}),
-  pot:mat(0x985018,0.84),leaf:mat(0x306018,0.84),leaf2:mat(0x3c7018,0.84),
-  fruit1:mat(0xc03810,0.80),fruit2:mat(0xc08810,0.80),fruit3:mat(0x246010,0.80),
-  concrete:mat(0xe0d8c8,0.92),buffet:mat(0xb87838,0.76),table:mat(0xd8b058,0.74),chair:mat(0xc89838,0.78),
-  fpDark:mat(0x8a7a52,0.93),fpLight:mat(0xdece9e,0.88),
-};
-var prods=[M.pR,M.pY,M.pG,M.pO,M.pB,M.pP,M.pT,M.pC];
-function box(w,h,d,m,x,y,z,ry){var mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);mesh.position.set(x||0,y||0,z||0);if(ry)mesh.rotation.y=ry;mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);return mesh;}
-function cyl(rt,rb,h,seg,m,x,y,z){var mesh=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),m);mesh.position.set(x||0,y||0,z||0);mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);return mesh;}
-function sph(r,m,x,y,z){var mesh=new THREE.Mesh(new THREE.SphereGeometry(r,10,10),m);mesh.position.set(x||0,y||0,z||0);mesh.castShadow=true;scene.add(mesh);return mesh;}
-function ptl(c,i,d,x,y,z){var l=new THREE.PointLight(c,i,d);l.position.set(x,y,z);scene.add(l);return l;}
-
-var gndMesh=new THREE.Mesh(new THREE.PlaneGeometry(200,200),M.ground);gndMesh.rotation.x=-Math.PI/2;gndMesh.position.y=-0.02;gndMesh.receiveShadow=true;scene.add(gndMesh);
-var floorBase=new THREE.Mesh(new THREE.PlaneGeometry(44,32),mat(0xc0ae88,0.92));floorBase.rotation.x=-Math.PI/2;floorBase.position.set(1,0.01,0.5);floorBase.receiveShadow=true;scene.add(floorBase);floorBase.visible=false;
-for(var fi=-21;fi<=22;fi++)for(var fj=-14;fj<=15;fj++){var isG=fi%2===0||fj%2===0;var tm=isG?M.fpDark:M.fpLight,th=isG?0.013:0.018;var t2=new THREE.Mesh(new THREE.BoxGeometry(0.94,th,0.94),tm);t2.position.set(fi,th/2+0.01,fj);t2.receiveShadow=true;scene.add(t2);}
-[-16,-12.6,-9.2,-5.8,-2.4,1.0,4.4,7.8].forEach(function(ax){var s=new THREE.Mesh(new THREE.BoxGeometry(1.3,0.022,30),mat(0xd0c0a0,0.94));s.position.set(ax,0.022,0.5);s.receiveShadow=true;scene.add(s);});
-var WH=6.5;
-box(44,WH,0.55,M.wall,1,WH/2,-15.27);box(44.8,0.48,0.8,M.wallTop,1,WH+0.24,-15.27);
-box(0.55,WH,32,M.wall,-20.27,WH/2,0.5);box(0.8,0.48,32.8,M.wallTop,-20.27,WH+0.24,0.5);
-box(0.75,WH+0.1,0.75,M.wallDk,-20.27,WH/2,-15.27);
-box(14,1.2,0.4,M.signGlow,1,5.8,-15.05);ptl(0x3060ff,0.6,8,1,6.2,-14.2);
-// awning strips removed
-function shelf(gx,gz){var len=2.2;box(len,4.2,0.16,M.woodDk,gx,2.1,gz);for(var s=0;s<5;s++) box(len,0.1,0.92,M.wood,gx,0.38+s*0.82,gz+0.40);box(0.13,4.2,0.92,M.woodDk,gx-len/2,2.1,gz+0.40);box(0.13,4.2,0.92,M.woodDk,gx+len/2,2.1,gz+0.40);box(len,0.12,0.92,M.woodDk,gx,0.06,gz+0.40);for(var s2=0;s2<5;s2++){var y2=0.48+s2*0.82;for(var p=0;p<5;p++){var cm=prods[Math.floor(Math.random()*8)];var pw=0.20+Math.random()*0.07,ph=0.26+Math.random()*0.18;box(pw,ph,0.18,cm,gx-len/2+0.22+p*0.44,y2+ph/2+0.05,gz+0.38);}}}
-[[-17,-6.5],[-17,-2.0],[-17,2.5],[-17,7.0],[-13.6,-6.5],[-13.6,-2.0],[-13.6,2.5],[-13.6,7.0],[-10.2,-6.5],[-10.2,-2.0],[-10.2,2.5],[-10.2,7.0],[-6.8,-6.5],[-6.8,-2.0],[-6.8,2.5],[-6.8,7.0],[-3.4,-6.5],[-3.4,-2.0],[-3.4,2.5],[-3.4,7.0]].forEach(function(p){shelf(p[0],p[1]);});
-[[0.8,-8.5],[0.8,-4.5],[0.8,-0.5],[0.8,3.5],[0.8,7.5],[4.2,-8.5],[4.2,-4.5],[4.2,-0.5],[4.2,3.5],[4.2,7.5],[7.6,-8.5],[7.6,-4.5],[7.6,-0.5],[7.6,3.5],[7.6,7.5]].forEach(function(p){shelf(p[0],p[1]);});
-[12,14.8,17.6].forEach(function(cx){box(2.1,1.1,0.85,M.counter,cx,0.55,11.0);box(2.1,0.1,0.85,M.woodLt,cx,1.1,11.0);box(0.58,0.65,0.08,M.dark,cx+0.4,1.72,10.6);box(0.50,0.58,0.06,M.screenOn,cx+0.4,1.72,10.57);box(0.07,0.38,0.07,M.chrome,cx+0.4,1.34,10.6);ptl(0x4488ff,0.5,2.8,cx+0.4,1.8,10.3);box(1.9,0.1,2.6,M.dark,cx,1.11,13.0);box(1.05,0.5,0.12,M.signGlow,cx,2.55,10.5);});
-box(0.08,1.2,3.6,M.chrome,13.4,1.7,12.3);box(0.08,1.2,3.6,M.chrome,16.2,1.7,12.3);
-[-11.5,-8,-4.5].forEach(function(bz){box(4.2,1.25,1.0,M.buffet,18.0,0.62,bz);box(4.2,0.09,1.0,M.chrome,18.0,1.24,bz);[0,1,2,3].forEach(function(bt){box(0.72,0.09,0.72,prods[bt],18.0-1.5+bt*1.0,1.3,bz);});ptl(0xff9944,0.55,3.5,18.0,2.4,bz);});
-box(1.9,1.05,0.75,M.counter,19.5,0.52,-1.5);box(0.55,0.60,0.07,M.dark,19.8,1.35,-1.8);box(0.48,0.54,0.06,M.screenOn,19.8,1.35,-1.82);ptl(0x4488ff,0.4,2.2,19.8,1.4,-2.0);
-[[14.5,-2.5],[17,-2.5],[14.5,1],[17,1]].forEach(function(tp){var tx=tp[0],tz=tp[1];cyl(0.62,0.62,0.08,8,M.table,tx,0.86,tz);cyl(0.09,0.09,0.85,6,M.woodDk,tx,0.42,tz);[[0.85,0],[0,0.85],[-0.85,0],[0,-0.85]].forEach(function(co){box(0.46,0.07,0.46,M.chair,tx+co[0],0.55,tz+co[1]);box(0.08,0.55,0.08,M.woodDk,tx+co[0]-0.18,0.78,tz+co[1]-0.18);});});
-box(7.0,0.14,6.0,M.concrete,-17.5,0.07,-11.5);
-[[-17.0,0.3,-11.0,-10],[-18.0,0.3,-11.8,15],[-18.8,0.3,-10.5,-5],[-17.2,0.85,-11.0,8],[-18.2,0.85,-11.6,-12],[-17.0,1.4,-11.0,3]].forEach(function(d){box(0.85,0.6,0.68,M.cardboard,d[0],d[1],d[2],d[3]*Math.PI/180);});
-var trObj=box(0.8,0.9,1.2,M.chrome,-17.0,0.45,-9.0);var trBox=box(0.75,0.6,0.6,M.cardboard,-17.0,1.05,-9.0);var trX=-17.0,trDir=1;
-for(var ri=0;ri<7;ri++){var rx=-17+ri*3.4;box(3.0,4.0,0.7,M.chrome,rx,2.0,-14.65);box(2.8,3.8,0.09,M.glass,rx,2.0,-14.38);ptl(0x88ccee,0.3,3.2,rx,2.0,-14.2);for(var rr=0;rr<4;rr++) for(var rc=0;rc<4;rc++) box(0.32,0.48,0.22,prods[(rr*4+rc)%8],rx-0.96+rc*0.64,0.28+rr*0.88,-14.55);}
-box(6.5,0.9,3.2,M.woodLt,-1.5,0.45,-11.5);box(6.5,0.1,3.2,M.wood,-1.5,0.9,-11.5);
-[[-3.2,M.fruit1],[-2.0,M.fruit2],[-0.7,M.fruit3],[0.6,M.pG],[1.9,M.pY],[3.2,M.pR]].forEach(function(pc){for(var ps=0;ps<6;ps++) sph(0.19,pc[1],pc[0]+Math.random()*.38-.19,1.1+Math.random()*.08,-11.5+Math.random()*2-.9);});
-// conveyor removed
-function person(px,pz,sk,ha,to,bt,ry){var g=new THREE.Group();g.rotation.y=ry||0;function bx2(w,h,d,m,x,y,z){var me=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);me.position.set(x,y,z);me.castShadow=true;g.add(me);}bx2(0.42,0.62,0.24,to,0,1.0,0);bx2(0.17,0.5,0.19,bt,-0.11,0.52,0);bx2(0.17,0.5,0.19,bt,0.11,0.52,0);bx2(0.30,0.32,0.27,sk,0,1.50,0);bx2(0.32,0.13,0.30,ha,0,1.68,0);bx2(0.12,0.46,0.15,sk,-0.28,1.0,0);bx2(0.12,0.46,0.15,sk,0.28,1.0,0);g.position.set(px,0,pz);scene.add(g);}
-[[12,10.1,M.skin1,M.hair1,M.shirt3,M.pants1,0.12],[14.8,10.1,M.skin2,M.hair2,M.shirt1,M.pants2,0.06],[17.6,10.1,M.skin3,M.hair3,M.shirt4,M.pants1,0.08],[12,13.2,M.skin1,M.hair2,M.shirt2,M.pants2,Math.PI],[12,14.4,M.skin2,M.hair1,M.shirt4,M.pants1,Math.PI],[14.8,13.2,M.skin3,M.hair3,M.shirt1,M.pants2,Math.PI],[14.8,14.4,M.skin1,M.hair2,M.shirt3,M.pants1,Math.PI],[-15.3,-3.9,M.skin2,M.hair1,M.shirt1,M.pants2,Math.PI*1.5],[-11.9,0.3,M.skin3,M.hair3,M.shirt3,M.pants1,0],[-8.5,4.5,M.skin1,M.hair2,M.shirt2,M.pants2,Math.PI*0.7],[-5.1,-5.4,M.skin2,M.hair1,M.shirt4,M.pants2,Math.PI*0.3],[-1.7,2.1,M.skin3,M.hair2,M.shirt1,M.pants1,Math.PI*1.2],[2.4,-2.2,M.skin1,M.hair1,M.shirt3,M.pants2,Math.PI*0.8],[5.8,6.0,M.skin2,M.hair3,M.shirt2,M.pants1,Math.PI],[-19.5,-7.5,M.skin2,M.hair1,M.apron,M.pants2,Math.PI*0.5],[17.0,-1,M.skin3,M.hair2,M.apron,M.pants1,Math.PI],[19.2,-5,M.skin1,M.hair1,M.shirt4,M.pants2,Math.PI*1.5]].forEach(function(p){person(p[0],p[1],p[2],p[3],p[4],p[5],p[6]);});
-[[21.8,14.5],[21.8,-12.5],[-21.8,12],[21.8,1.5]].forEach(function(pl){cyl(0.5,0.55,0.88,10,M.pot,pl[0],0.44,pl[1]);sph(0.64,M.leaf,pl[0],1.24,pl[1]);sph(0.44,M.leaf2,pl[0]+0.24,1.12,pl[1]+0.14);});
-[[-6,5.5,0],[4,5.5,0],[4,5.5,-6],[-6,5.5,-6],[12,5.5,8],[-14,5.5,-8],[-14,5.5,4]].forEach(function(lp){ptl(0xfff0d0,0.55,9,lp[0],lp[1],lp[2]);box(0.35,0.12,0.35,mat(0xd0c8b0,0.5,0.4),lp[0],6.6,lp[2]);});
-
-// Zone 3D positions
-var zPos={
-  delivery: new THREE.Vector3(-16.5,0,-8.5),
-  register: new THREE.Vector3(14.8,0,11.0),
-  queue:    new THREE.Vector3(14.8,0,14.0),
-  aisles:   new THREE.Vector3(-5.0,0,0),
-  revenue:  new THREE.Vector3(18.0,0,-2.5)
-};
-// Arrow height for projection (top of arrows in 3D)
-var ARROW_3D_Y=5.8;
-
-// Hit targets
-var hitGeo=new THREE.CylinderGeometry(2.2,2.2,5,16);
-var hitMat=new THREE.MeshBasicMaterial({visible:false});
-var hitMeshes={};
-ZONE_IDS.forEach(function(id){
-  var m=new THREE.Mesh(hitGeo,hitMat);
-  m.position.copy(zPos[id]);m.position.y+=2;m.userData.zoneId=id;scene.add(m);hitMeshes[id]=m;
-});
-var hitArr=Object.values(hitMeshes);
-
-// ── HTML ARROW ELEMENTS — positioned via 3D→2D projection ─────────────────
-var arrowEls={};
-var arrContainer=document.getElementById('arr-container');
-ZONE_IDS.forEach(function(id){
-  var wrap=document.createElement('div');wrap.className='zone-arrow-wrap';wrap.id='arr-'+id;
-  wrap.style.display='none';
-  var col=ZONES[id].col;
-  for(var a=0;a<3;a++){
-    var tri=document.createElement('div');tri.className='za';
-    // CSS downward triangle = top border colored
-    tri.style.borderTop='18px solid '+col;
-    wrap.appendChild(tri);
-  }
-  arrContainer.appendChild(wrap);
-  arrowEls[id]=wrap;
-});
-
-function projectToScreen(pos3d, yOverride){
-  var v=new THREE.Vector3(pos3d.x, yOverride!==undefined?yOverride:pos3d.y, pos3d.z);
-  v.project(cam);
-  var cw=window.innerWidth, ch=window.innerHeight-NAV_H;
-  return {
-    x:(v.x*.5+.5)*cw,
-    y:(-v.y*.5+.5)*ch + NAV_H  // offset by nav height for screen coords
-  };
-}
-
-function updateArrows(){
-  ZONE_IDS.forEach(function(id){
-    var el=arrowEls[id];
-    var isSolv=solved.has(id),isCur=ZONES[id].step===step&&!isSolv;
-    if(!isCur){el.style.display='none';return;}
-    var sc=projectToScreen(zPos[id], ARROW_3D_Y);
-    el.style.left=sc.x+'px';el.style.top=sc.y+'px';
-    el.style.display='flex';
-  });
-}
-
-// Raycaster
-var ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
-function zoneAt(e){
-  var r=canvas.getBoundingClientRect();
-  mouse.x=((e.clientX-r.left)/r.width)*2-1;
-  mouse.y=-((e.clientY-r.top)/r.height)*2+1;
-  ray.setFromCamera(mouse,cam);
-  var hits=ray.intersectObjects(hitArr);
-  return hits.length?hits[0].object.userData.zoneId:null;
-}
-window.addEventListener('mousemove',function(e){
-  if(!gameStarted) return;
-  var id=zoneAt(e);
-  if(id!==hovered){hovered=id;if(id){showTT(id,e.clientX,e.clientY);}else if(!solving){hideTT();hideZL();}}
-  if(id){
-    if(document.getElementById('tt').style.display!=='none'){
-      var ttx2=Math.min(Math.max(e.clientX,160),window.innerWidth-160);
-      var tty2=Math.max(e.clientY,NAV_H+180);
-      document.getElementById('tt').style.left=ttx2+'px';document.getElementById('tt').style.top=tty2+'px';
-    }
-    showZL(id,e.clientX,e.clientY);
-  }
-});
-window.addEventListener('click',function(e){
-  if(!gameStarted) return;
-  var id=zoneAt(e);if(!id||solved.has(id)||ZONES[id].step!==step||solving)return;applyFix();
-});
-
-// Check prefers-reduced-motion
-var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-if(prefersReducedMotion){
-  var loadingMsg = document.getElementById('loading-state');
-  if(loadingMsg) loadingMsg.textContent = 'Motion animations disabled per your accessibility preferences. Static mode enabled.';
-}
-
-// Keyboard navigation for zones (arrow keys to cycle)
-var focusedZoneIdx = 0;
-var zoneIds = ZONE_IDS.slice();
-function clearZoneFocus(){
-  zoneIds.forEach(function(zid){
-    var dotEl = document.getElementById('dot-' + zid);
-    if(dotEl) dotEl.style.outline = 'none';
-  });
-}
-function setZoneFocus(idx){
-  clearZoneFocus();
-  var zid = zoneIds[idx];
-  var dotEl = document.getElementById('dot-' + zid);
-  if(dotEl){
-    dotEl.style.outline = '2px solid #0080FF';
-    dotEl.style.outlineOffset = '2px';
-  }
-}
-document.addEventListener('keydown', function(e){
-  if(e.key === 'ArrowRight' || e.key === 'ArrowDown'){
-    focusedZoneIdx = (focusedZoneIdx + 1) % zoneIds.length;
-    setZoneFocus(focusedZoneIdx);
-  } else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){
-    focusedZoneIdx = (focusedZoneIdx - 1 + zoneIds.length) % zoneIds.length;
-    setZoneFocus(focusedZoneIdx);
-  } else if(e.key === ' ' || e.key === 'Enter'){
-    var zid = zoneIds[focusedZoneIdx];
-    if(zid && !solved.has(zid) && ZONES[zid].step === step && !solving) applyFix();
-  }
-});
-
-var t=0;
-(function loop(){
-  requestAnimationFrame(loop);t+=0.016;
-  // Skip animation frame if prefers-reduced-motion is set (static render only)
-  if(prefersReducedMotion && t > 0.05) return;
-  // Clear loading state on first render
-  var loadingEl = document.getElementById('loading-state');
-  if(loadingEl && loadingEl.textContent !== '') loadingEl.textContent = '';
-
-  if(!solved.has('delivery')){
-    trX+=trDir*0.018;if(trX>-13.5||trX<-20.5)trDir*=-1;
-    trObj.position.x=trX;trBox.position.x=trX;
-  } else {trBox.material=M.cardOk;}
-  renderer.render(scene,cam);
-  updateArrows();
-})();
-
-function showZL(id,x,y){
-  var z=ZONES[id],isSolv=solved.has(id),isLk=z.step>step&&!isSolv;
-  var inner=document.getElementById('zl-inner'),face=document.getElementById('zl-face');
-  var name=document.getElementById('zl-name'),cta=document.getElementById('zl-cta'),pulse=document.getElementById('zl-pulse');
-  face.textContent=z.icon;name.textContent=z.label;
-  var state=isSolv?'done':isLk?'locked':'';
-  inner.className='zl-inner'+(state?' '+state:'');cta.className='zl-cta'+(state?' '+state:'');pulse.className='zl-pulse'+(state?' '+state:'');
-  cta.textContent=isSolv?'Fixed ✓':isLk?'Fix upstream first':'Click to fix';
-  pulse.style.background=isSolv?'#3ab858':isLk?'#506070':z.col;
-  face.style.background='rgba(0,0,0,.3)';
-  var el=document.getElementById('zl');
-  var cx=Math.min(Math.max(x,80),window.innerWidth-80);
-  el.style.left=cx+'px';el.style.top=(y+24)+'px';el.style.display='block';
-}
-function hideZL(){document.getElementById('zl').style.display='none';}
-function showTT(id,x,y){
-  var z=ZONES[id],isSolv=solved.has(id),isLk=z.step>step&&!isSolv;
-  document.getElementById('ttp').style.display=(!isSolv&&!isLk)?'block':'none';
-  document.getElementById('tts').style.display=isSolv?'block':'none';
-  document.getElementById('ttlk').style.display=isLk?'block':'none';
-  var arr=document.getElementById('ttarr');arr.className='tt-arr '+(isLk?'arr-lock':isSolv?'arr-soln':'arr-prob');
-  if(!isSolv&&!isLk){
-    document.getElementById('tt-icon').textContent=z.icon;
-    document.getElementById('ttn-p').textContent=z.label;document.getElementById('tttl-p').textContent=z.prob.t;
-    document.getElementById('ttbd-p').textContent=z.prob.b;document.getElementById('ttmt-p').textContent=z.prob.stat;
-    var sv=solving===id;
-    document.getElementById('ttpw').style.display=sv?'block':'none';document.getElementById('ttbtn').style.display=sv?'none':'block';document.getElementById('ttslv').style.display=sv?'block':'none';
-  } else if(isSolv){
-    document.getElementById('tt-icon-s').textContent=z.icon;
-    document.getElementById('ttn-s').textContent=z.label;document.getElementById('tttl-s').textContent=z.soln.t;
-    document.getElementById('ttbd-s').textContent=z.soln.b;
-    var h='';z.soln.delta.forEach(function(dd){h+='<div class="drow"><span class="dlbl">'+dd.l+'</span><span class="dbef">'+dd.b+'</span><span class="darr">→</span><span class="daft">'+dd.a+'</span></div>';});
-    document.getElementById('ttdelta').innerHTML=h;
-  } else {document.getElementById('ttn-l').textContent=z.label;}
-  var tt=document.getElementById('tt');
-  // clamp x so tooltip (300px wide) stays on screen
-  var ttx=Math.min(Math.max(x,160),window.innerWidth-160);
-  // clamp y so tooltip doesn't go under nav (tooltip is ~-108% above cursor)
-  var tty=Math.max(y, NAV_H+180);
-  tt.style.left=ttx+'px';tt.style.top=tty+'px';tt.style.display='block';
-}
-function hideTT(){document.getElementById('tt').style.display='none';}
-function applyFix(){
-  var id=hovered;if(!id||ZONES[id].step!==step||solved.has(id))return;
-  solving=id;
-  document.getElementById('ttbtn').style.display='none';document.getElementById('ttslv').style.display='block';document.getElementById('ttpw').style.display='block';
-  var pct=0;if(pint)clearInterval(pint);
-  pint=setInterval(function(){pct+=2;document.getElementById('ttpf').style.width=pct+'%';document.getElementById('ttpp').textContent=pct+'%';if(pct>=100){clearInterval(pint);setTimeout(function(){completeSolve(id);},200);}},36);
-}
-function completeSolve(id){
-  solved.add(id);step++;solving=null;updGuide();spawnConfetti(id);
-  if(solved.size===5){setTimeout(showFS,700);document.getElementById('sg').style.opacity='0';}
-  if(hovered===id) showTT(id,parseFloat(document.getElementById('tt').style.left),parseFloat(document.getElementById('tt').style.top));
-  else hideTT();
-}
-function spawnConfetti(id){
-  var c=ZONES[id].colHex;
-  var cols=['rgb('+(c>>16&255)+','+(c>>8&255)+','+(c&255)+')','#30ff70','#ffcc30','#4488ff','#ff8c20','#20ddb8'];
-  var sc=projectToScreen(zPos[id],3);
-  for(var ci=0;ci<32;ci++){
-    var e=document.createElement('div');e.className='cf';
-    e.style.left=(sc.x+Math.random()*90-45)+'px';e.style.top=(sc.y+Math.random()*55-27)+'px';
-    e.style.width=(4+Math.random()*6)+'px';e.style.height=(4+Math.random()*6)+'px';
-    e.style.background=cols[Math.floor(Math.random()*cols.length)];
-    e.style.animationDelay=(Math.random()*.35)+'s';
-    document.body.appendChild(e);(function(el){setTimeout(function(){el.remove();},1800);})(e);
-  }
-}
-function initDots(){
-  var c=document.getElementById('dots');c.innerHTML='';
-  ZONE_IDS.forEach(function(id){var d=document.createElement('div');d.className='dot';d.id='dot-'+id;c.appendChild(d);});updGuide();
-}
-function updGuide(){
-  ZONE_IDS.forEach(function(id){var d=document.getElementById('dot-'+id);d.className='dot'+(solved.has(id)?' done':ZONES[id].step===step?' cur':'');});
-  var cur=ZONE_IDS.filter(function(id){return ZONES[id].step===step;})[0];
-  if(cur) document.getElementById('sgtxt').innerHTML='Go to: <b>'+ZONES[cur].label+'</b>';
-  document.getElementById('np').style.width=(solved.size/5*100)+'%';
-  document.getElementById('nc').textContent=solved.size+' / 5 fixed';
-}
-function showFS(){
-  var h='';METRICS.forEach(function(mm){h+='<div class="fs-row"><span class="fs-lbl">'+mm.l+'</span><span class="fs-bef">'+mm.b+'</span><span class="fs-arrw"> → </span><span class="fs-aft">'+mm.a+'</span></div>';});
-  document.getElementById('fsmet').innerHTML=h;document.getElementById('fs').classList.add('vis');
-}
-initDots();
-
-// Embed mode: hide internal nav, zero NAV_H, fill full viewport
-(function(){
-  var isEmbed = new URLSearchParams(location.search).get('embed');
-  if(isEmbed){
-    var nav = document.querySelector('nav');
-    var sg = document.getElementById('sg');
-    if(nav) nav.style.display='none';
-    if(sg) sg.style.top='10px';
-    var cv = document.getElementById('c');
-    if(cv) cv.style.top='0';
-    NAV_H = 0;
-    // zoom out to show full store — wider frustum, positioned right-top
-    F = 38;
-    cam.top = F; cam.bottom = -F;
-    cam.position.set(58,48,58); cam.lookAt(10,4,5);
-    onResize();
-  }
-})();
-</script>
+  <script type="module" src="./js/main.js"></script>
 </body>
 </html>
