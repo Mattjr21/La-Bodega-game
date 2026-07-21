@@ -21,25 +21,45 @@
 </head>
 <body>
   <div id="app">
-    <a class="sr-only" href="#zone-list">Skip to mission panel</a>
+    <a class="skip-link" href="#zone-list">Skip to mission controls</a>
 
     <header class="topbar">
       <div class="brand">La Bodega <span>Checkout Ops</span></div>
       <div class="topbar__actions">
-        <div class="progress" aria-hidden="true">
+        <div
+          class="progress"
+          id="mission-progress"
+          role="progressbar"
+          aria-label="Mission progress"
+          aria-valuemin="0"
+          aria-valuemax="5"
+          aria-valuenow="0"
+          aria-valuetext="0 of 5 zones optimized"
+        >
           <div class="progress__track"><div class="progress__fill" id="progress-fill"></div></div>
           <span class="progress__label" id="progress-label">0 / 5 zones optimized</span>
         </div>
         <button type="button" class="chip-btn" id="btn-mode" aria-pressed="false">List Walkthrough</button>
+        <button type="button" class="chip-btn" id="btn-restart" hidden>Restart</button>
         <a class="link" id="link-case" href="https://danny-me-rho.vercel.app/projects/bodega-ops" target="_blank" rel="noopener">Case study</a>
         <a class="link" id="link-home" href="https://danny-me-rho.vercel.app/" target="_blank" rel="noopener">danny.me</a>
       </div>
     </header>
 
+    <div class="mobile-hud" aria-label="Current mission issue">
+      <div class="mobile-hud__status">
+        <strong id="mobile-issue">Issue 1 of 5</strong>
+        <span id="mobile-zone">Delivery Dock</span>
+      </div>
+      <button type="button" class="mobile-hud__mode" id="mobile-mode">
+        List
+      </button>
+    </div>
+
     <canvas
       id="c"
       role="img"
-      aria-label="Interactive 3D store overview. Use the mission panel on the left to select zones and apply fixes. Orbit with pointer drag when exploring."
+      aria-label="Interactive 3D store. Tap the pulsing ring, find the broken object, then apply the fix. Orbit with pointer drag when exploring."
     ></canvas>
 
     <aside class="panel" aria-label="Mission panel">
@@ -47,12 +67,9 @@
         <p class="panel__eyebrow">Mission</p>
         <h1 class="panel__title">Optimize five store zones</h1>
         <p class="panel__lede">
-          Work the ops path in order: dock → registers → checkout floor → aisles → pricing.
-          The 3D scene is visual enhancement — every step works from this panel.
+          Ops mini-game: tap the open ring, find the broken object, apply the fix, and watch the floor change. List view skips the hunt.
         </p>
       </div>
-
-      <div class="metrics" id="metrics" aria-label="Case study metrics"></div>
 
       <div
         id="zone-list"
@@ -64,19 +81,25 @@
       <section class="zone-detail" id="zone-detail" hidden aria-live="polite">
         <h3 id="detail-title">Zone</h3>
         <div>
-          <p class="label">Problem</p>
+          <p class="label">What’s wrong</p>
           <p id="detail-problem"></p>
         </div>
         <div>
-          <p class="label">Solution</p>
+          <p class="label">The fix</p>
           <p id="detail-solution"></p>
         </div>
         <p class="metric-line" id="detail-metric"></p>
+        <p class="challenge-line" id="detail-challenge" hidden></p>
         <div class="detail-actions">
           <button type="button" class="btn btn-secondary" id="btn-back">Back to overview</button>
           <button type="button" class="btn btn-primary" id="btn-apply">Apply fix</button>
         </div>
       </section>
+
+      <details class="metrics-disclosure" id="metrics-disclosure">
+        <summary>Case study metrics</summary>
+        <div class="metrics" id="metrics"></div>
+      </details>
 
       <div class="win" id="win" hidden>
         <h3>Mission complete</h3>
@@ -84,19 +107,25 @@
           Five zones optimized — sample gate, shared catalog path, live correction queue,
           three-team verification, and pricing onboarding. Read the full case study for the 72-hour story.
         </p>
+        <button type="button" class="btn btn-primary" id="btn-replay">Play again</button>
       </div>
+
+      <div class="fallback" id="fallback" role="status">
+        <strong>List walkthrough ready</strong>
+        <p data-fallback-msg>Use the mission panel to complete all five zones without 3D.</p>
+      </div>
+
+      <nav class="panel__links" aria-label="Related links">
+        <a id="panel-link-case" href="https://danny-me-rho.vercel.app/projects/bodega-ops" target="_blank" rel="noopener">Read case study</a>
+        <a id="panel-link-home" href="https://danny-me-rho.vercel.app/" target="_blank" rel="noopener">Visit portfolio</a>
+      </nav>
     </aside>
 
     <p class="hint" id="hint" hidden aria-hidden="true">
-      Drag to orbit · Select a zone in the panel or tap a colored ring · Esc returns to overview
+      Drag to orbit · Tap the pulsing ring · Find the broken object · Apply fix · Esc returns
     </p>
 
-    <div class="fallback" id="fallback" role="status">
-      <div class="fallback__card">
-        <h2>List walkthrough ready</h2>
-        <p data-fallback-msg>Use the mission panel to complete all five zones without 3D.</p>
-      </div>
-    </div>
+    <div id="toast" class="toast" role="status" hidden></div>
 
     <div id="live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
   </div>

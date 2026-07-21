@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { ZONES } from './content.js'
+import { ZONES, METRICS } from './content.js'
 import { createStoreScene } from './scene.js'
 import { createCameraSystem } from './camera.js'
 import { createUI } from './ui.js'
@@ -17,8 +17,9 @@ const lowCapability =
 
 const state = {
   solved: new Set(),
+  inspected: new Set(),
   selected: null,
-  mode: reducedMotion || lowCapability ? 'list' : 'explore', // explore | list
+  mode: reducedMotion || lowCapability ? 'list' : 'explore',
   started: true,
 }
 
@@ -58,12 +59,22 @@ function isZoneLocked(zoneId) {
   return !state.solved.has(ZONES[idx - 1].id)
 }
 
-function updateMarkers() {
+function nextOpenZoneId() {
+  const open = ZONES.find((z) => !state.solved.has(z.id))
+  return open?.id || null
+}
+
+function syncWorldMarkers() {
   if (!store) return
   ZONES.forEach((z) => {
     if (state.solved.has(z.id)) store.setMarkerColor(z.id, 0x16a34a)
     else if (isZoneLocked(z.id)) store.setMarkerColor(z.id, 0xa8a29e)
     else store.setMarkerColor(z.id, z.colorHex)
+  })
+  store.syncMarkers({
+    solved: state.solved,
+    selected: state.selected,
+    nextOpenId: nextOpenZoneId(),
   })
 }
 
@@ -73,10 +84,21 @@ function selectZone(zoneId) {
     return
   }
   state.selected = zoneId
+  // List mode skips the scene micro-challenge for keyboard / AT users.
+  if (state.mode === 'list') state.inspected.add(zoneId)
+  store?.setActiveZone(zoneId)
+  if (state.mode === 'explore' && !state.solved.has(zoneId) && !state.inspected.has(zoneId)) {
+    store?.setChallengePulse(zoneId)
+  }
+  syncWorldMarkers()
   ui.renderZones()
   ui.showDetail(zoneId)
   const zone = ZONES.find((z) => z.id === zoneId)
-  ui.announce(`Selected ${zone.name}. ${zone.problem}`)
+  if (state.mode === 'explore' && !state.solved.has(zoneId) && !state.inspected.has(zoneId)) {
+    ui.announce(`Selected ${zone.name}. ${zone.challengeHint}. Then apply the fix.`)
+  } else {
+    ui.announce(`Selected ${zone.name}. ${zone.problem}`)
+  }
 
   if (cam && state.mode === 'explore') {
     animating = true
@@ -91,11 +113,69 @@ function selectZone(zoneId) {
   }
 }
 
+function inspectChallenge(zoneId) {
+  if (!zoneId || state.solved.has(zoneId) || state.inspected.has(zoneId)) return
+  if (state.selected !== zoneId) return
+  state.inspected.add(zoneId)
+  store?.markChallengeFound(zoneId)
+  store?.setChallengePulse(null)
+  ui.renderZones()
+  ui.showDetail(zoneId)
+  const zone = ZONES.find((z) => z.id === zoneId)
+  ui.announce(`Found the issue in ${zone.name}. Apply the fix to update the floor.`)
+  needsFrame = true
+}
+
+function advanceNext() {
+  const openId = nextOpenZoneId()
+  if (openId) selectZone(openId)
+  else backOverview()
+}
+
+let lastMissAt = 0
+
+function guideMiss() {
+  const now = performance.now()
+  if (now - lastMissAt < 1400) return
+  lastMissAt = now
+  if (state.selected && !state.solved.has(state.selected) && !state.inspected.has(state.selected)) {
+    store?.nudgeBeacon()
+    const zone = ZONES.find((z) => z.id === state.selected)
+    ui.showToast(`Not there — tap the red marker. ${zone?.challengeHint || ''}`.trim())
+  } else if (!state.selected) {
+    ui.showToast('Tap the glowing ring to inspect the open zone.')
+  }
+  needsFrame = true
+}
+
+function restart() {
+  state.solved.clear()
+  state.inspected.clear()
+  state.selected = null
+  store?.resetZones()
+  store?.setChallengePulse(null)
+  store?.setActiveZone(null)
+  confetti.forEach((m) => store?.root.remove(m))
+  confetti = []
+  syncWorldMarkers()
+  ui.renderZones()
+  ui.updateProgress()
+  ui.hideDetail()
+  if (cam && state.mode === 'explore') {
+    cam.returnOverview({ reducedMotion })
+  }
+  ui.announce('Mission reset. Five zones ready to optimize again.')
+  needsFrame = true
+}
+
 function backOverview() {
   const had = state.selected
   state.selected = null
-  ui.hideDetail()
+  store?.setChallengePulse(null)
+  store?.setActiveZone(null)
+  syncWorldMarkers()
   ui.renderZones()
+  ui.hideDetail(had)
   if (had) ui.announce('Returned to store overview.')
 
   if (cam && state.mode === 'explore') {
@@ -117,22 +197,43 @@ function applyFix(zoneId) {
     ui.announce('This zone is locked. Complete the previous zone first.')
     return
   }
+  if (state.mode === 'explore' && !state.inspected.has(zoneId)) {
+    ui.announce('Find the broken object in the scene first, then apply the fix.')
+    return
+  }
   state.solved.add(zoneId)
-  updateMarkers()
+  state.inspected.add(zoneId)
+  store?.applyZoneFix(zoneId)
+  store?.setChallengePulse(null)
+  syncWorldMarkers()
   ui.renderZones()
-  ui.showDetail(zoneId)
-  ui.updateProgress()
+  ui.showDetail(zoneId, { focus: false })
+
+  const unlockedMetric = Object.entries(METRICS).find(([, m]) => m.unlockZone === zoneId)?.[0]
+  ui.updateProgress({ justUnlocked: unlockedMetric })
+
   const zone = ZONES.find((z) => z.id === zoneId)
-  ui.announce(`Applied fix for ${zone.name}. ${zone.solution}`)
+  const metricMeta = unlockedMetric ? METRICS[unlockedMetric] : null
+  const nextZone = ZONES.find((z) => !state.solved.has(z.id))
+  const base = metricMeta
+    ? `Applied fix for ${zone.name}. ${metricMeta.label} is now ${metricMeta.after}.`
+    : `Applied fix for ${zone.name}. ${zone.solution}`
+  ui.announce(
+    nextZone
+      ? `${base} Next up: ${nextZone.name}. Use the Next button to continue.`
+      : `${base} All five zones optimized.`,
+  )
 
   if (!reducedMotion && state.mode === 'explore' && state.solved.size === ZONES.length) {
     spawnConfetti()
   }
 
-  // StadiView flow: after applying, return to overview (list mode keeps detail visible)
-  if (state.mode === 'explore') {
-    setTimeout(() => backOverview(), reducedMotion ? 0 : 650)
-  }
+  // Focus the primary action so keyboard users can advance with one key.
+  requestAnimationFrame(() => {
+    const applyEl = document.getElementById('btn-apply')
+    if (applyEl && !applyEl.disabled) applyEl.focus()
+    else document.getElementById('btn-back')?.focus()
+  })
   needsFrame = true
 }
 
@@ -142,6 +243,7 @@ function toggleMode() {
   ui.renderZones()
 
   if (state.mode === 'list') {
+    if (state.selected) state.inspected.add(state.selected)
     ui.announce('List walkthrough mode. Use the mission panel to complete all zones.')
     if (state.selected) ui.showDetail(state.selected)
     else ui.hideDetail()
@@ -153,15 +255,19 @@ function toggleMode() {
       ui.renderZones()
       return
     }
-    ui.announce('3D explore mode. Select a zone to fly the camera in.')
+    ui.announce('3D explore mode. Tap the open zone ring, find the broken object, then apply the fix.')
     if (state.selected) {
       cam.flyTo(state.selected, { reducedMotion })
+      if (!state.solved.has(state.selected) && !state.inspected.has(state.selected)) {
+        store?.setChallengePulse(state.selected)
+      }
       ui.showDetail(state.selected)
     } else {
       cam.returnOverview({ reducedMotion })
       ui.hideDetail()
     }
   }
+  syncWorldMarkers()
   needsFrame = true
 }
 
@@ -223,9 +329,7 @@ function loop(now) {
   const dt = Math.min(0.05, (now - lastT) / 1000)
   lastT = now
 
-  // Orbit damping needs continuous frames while explore mode is visible.
-  // Pause fully when the tab/iframe is hidden (visibilitychange / postMessage).
-  store?.tick(dt, state.solved.has('delivery'))
+  store?.tick(dt)
   tickConfetti(dt)
   cam?.update()
   renderer.render(store.scene, cam.camera)
@@ -250,20 +354,35 @@ function setup3D() {
   createInteraction({
     canvas,
     camera: cam.camera,
-    hitList: store.hitList,
-    isInteractive: () =>
-      state.mode === 'explore' && pageVisible && !cam.tweening && !state.selected,
-    onPickZone: (zoneId) => selectZone(zoneId),
+    getHitList: () => {
+      if (state.mode !== 'explore' || !pageVisible || cam.tweening) return []
+      // In a zone: only the challenge prop is pickable until inspected.
+      if (state.selected) {
+        if (state.solved.has(state.selected) || state.inspected.has(state.selected)) return []
+        return store.challengeHits.filter((h) => h.userData.zoneId === state.selected)
+      }
+      // Overview: only the next open zone ring.
+      const openId = nextOpenZoneId()
+      return openId ? [store.hitMeshes[openId]].filter(Boolean) : []
+    },
+    isInteractive: () => state.mode === 'explore' && pageVisible && !cam.tweening,
+    onPick: (obj) => {
+      const zoneId = obj.userData.zoneId
+      if (!zoneId) return
+      if (obj.userData.kind === 'challenge') {
+        inspectChallenge(zoneId)
+        return
+      }
+      selectZone(zoneId)
+    },
+    onMiss: guideMiss,
   })
-
-  // Allow picking while in overview; when in detail, clicks on canvas don't change zone
-  // (mission panel owns apply). When selected, still allow orbit.
 
   cam.controls.addEventListener('change', () => {
     needsFrame = true
   })
 
-  updateMarkers()
+  syncWorldMarkers()
   resize()
   requestAnimationFrame(loop)
 }
@@ -274,7 +393,6 @@ function onVisibility() {
 }
 
 function onMessage(e) {
-  // Portfolio iframe can pause us
   if (!e?.data || typeof e.data !== 'object') return
   if (e.data.type === 'bodega:pause') {
     pageVisible = false
@@ -289,8 +407,10 @@ function boot() {
   ui = createUI({
     onSelectZone: selectZone,
     onApplyFix: applyFix,
+    onAdvanceNext: advanceNext,
     onBackOverview: backOverview,
     onToggleMode: toggleMode,
+    onRestart: restart,
     getState,
   })
 
@@ -322,7 +442,7 @@ function boot() {
       } else {
         hint.hidden = false
         ui.announce(
-          'Store overview ready. Use the mission panel or click a colored zone ring to begin.',
+          'Ops run ready. Tap the pulsing ring, find the broken object, then apply the fix.',
         )
       }
     } catch (err) {
@@ -339,7 +459,22 @@ function boot() {
   document.addEventListener('visibilitychange', onVisibility)
   window.addEventListener('message', onMessage)
 
-  // Keyboard: Enter/Space already activate focused buttons; Escape handled in UI
+  // Deterministic hooks for automated visual checks only.
+  if (params.get('debug') === '1') {
+    window.__bodega = {
+      state,
+      selectZone,
+      inspectChallenge,
+      applyFix,
+      advanceNext,
+      backOverview,
+      restart,
+      guideMiss,
+      requestFrame: () => {
+        needsFrame = true
+      },
+    }
+  }
 }
 
 boot()

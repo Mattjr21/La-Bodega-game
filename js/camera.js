@@ -22,6 +22,14 @@ export function createCameraSystem(renderer, canvas) {
   let mode = 'overview' // overview | detail
   let tweening = false
   let activeZone = null
+  let activeTween = null
+
+  function killActiveTween() {
+    if (activeTween) {
+      activeTween.kill()
+      activeTween = null
+    }
+  }
 
   function setAspect(w, h) {
     camera.aspect = w / h
@@ -31,6 +39,10 @@ export function createCameraSystem(renderer, canvas) {
   function flyTo(zoneId, { reducedMotion = false, onComplete } = {}) {
     const zone = ZONES.find((z) => z.id === zoneId)
     if (!zone) return
+    // Cinematic when moving from one zoomed-in zone to another: pull back to an
+    // establishing view over the destination, then descend in.
+    const wasDetail = mode === 'detail'
+    killActiveTween()
     activeZone = zoneId
     mode = 'detail'
     controls.enabled = false
@@ -61,22 +73,16 @@ export function createCameraSystem(renderer, canvas) {
       tz: controls.target.z,
     }
 
-    gsap.to(state, {
-      duration: 1.15,
-      ease: 'power2.inOut',
-      x: pos.x,
-      y: pos.y,
-      z: pos.z,
-      tx: look.x,
-      ty: look.y,
-      tz: look.z,
-      onUpdate() {
-        camera.position.set(state.x, state.y, state.z)
-        controls.target.set(state.tx, state.ty, state.tz)
-        camera.lookAt(controls.target)
-      },
+    function onUpdate() {
+      camera.position.set(state.x, state.y, state.z)
+      controls.target.set(state.tx, state.ty, state.tz)
+      camera.lookAt(controls.target)
+    }
+
+    const tl = gsap.timeline({
       onComplete() {
         tweening = false
+        activeTween = null
         controls.enabled = true
         controls.minDistance = 8
         controls.maxDistance = 28
@@ -84,9 +90,53 @@ export function createCameraSystem(renderer, canvas) {
         onComplete?.()
       },
     })
+    activeTween = tl
+
+    if (wasDetail) {
+      // Establishing vantage: pulled back and lifted above the destination so
+      // the player sees the next location in the context of the whole store.
+      const dir = pos.clone().sub(look)
+      const transit = look.clone().add(dir.multiplyScalar(2.5))
+      transit.y = Math.max(pos.y * 1.9, 24)
+
+      tl.to(state, {
+        duration: 1.05,
+        ease: 'power2.inOut',
+        x: transit.x,
+        y: transit.y,
+        z: transit.z,
+        tx: look.x,
+        ty: look.y,
+        tz: look.z,
+        onUpdate,
+      }).to(state, {
+        duration: 1.45,
+        ease: 'power2.inOut',
+        x: pos.x,
+        y: pos.y,
+        z: pos.z,
+        tx: look.x,
+        ty: look.y,
+        tz: look.z,
+        onUpdate,
+      })
+    } else {
+      tl.to(state, {
+        duration: 1.65,
+        ease: 'power2.inOut',
+        x: pos.x,
+        y: pos.y,
+        z: pos.z,
+        tx: look.x,
+        ty: look.y,
+        tz: look.z,
+        onUpdate,
+      })
+    }
   }
 
   function returnOverview({ reducedMotion = false, onComplete } = {}) {
+    killActiveTween()
     activeZone = null
     mode = 'overview'
     controls.enabled = false
@@ -117,8 +167,8 @@ export function createCameraSystem(renderer, canvas) {
       tz: controls.target.z,
     }
 
-    gsap.to(state, {
-      duration: 1.05,
+    activeTween = gsap.to(state, {
+      duration: 1.5,
       ease: 'power2.inOut',
       x: pos.x,
       y: pos.y,
@@ -133,6 +183,7 @@ export function createCameraSystem(renderer, canvas) {
       },
       onComplete() {
         tweening = false
+        activeTween = null
         controls.enabled = true
         controls.update()
         onComplete?.()

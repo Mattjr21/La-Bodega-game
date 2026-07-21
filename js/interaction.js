@@ -3,8 +3,9 @@ import * as THREE from 'three'
 /**
  * Unified Pointer Events picking for mouse / touch / pen.
  * Avoids hover-dependent fix actions.
+ * getHitList() can return zone rings or challenge props depending on mode.
  */
-export function createInteraction({ canvas, camera, hitList, onPickZone, isInteractive }) {
+export function createInteraction({ canvas, camera, getHitList, onPick, onMiss, isInteractive }) {
   const raycaster = new THREE.Raycaster()
   const pointer = new THREE.Vector2()
   let pointerId = null
@@ -18,9 +19,11 @@ export function createInteraction({ canvas, camera, hitList, onPickZone, isInter
   }
 
   function pick() {
+    const list = typeof getHitList === 'function' ? getHitList() : getHitList
+    if (!list?.length) return null
     raycaster.setFromCamera(pointer, camera)
-    const hits = raycaster.intersectObjects(hitList, false)
-    return hits[0]?.object?.userData?.zoneId || null
+    const hits = raycaster.intersectObjects(list, false)
+    return hits[0]?.object || null
   }
 
   canvas.addEventListener('pointerdown', (e) => {
@@ -57,8 +60,9 @@ export function createInteraction({ canvas, camera, hitList, onPickZone, isInter
     }
     if (wasDrag || !isInteractive()) return
     setPointerFromEvent(e)
-    const zoneId = pick()
-    if (zoneId) onPickZone(zoneId)
+    const obj = pick()
+    if (obj) onPick(obj)
+    else if (onMiss) onMiss()
   }
 
   canvas.addEventListener('pointerup', endPointer)
